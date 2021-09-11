@@ -10,7 +10,7 @@ const app = express();
 
 app.use(express.json());
 
-const preparePageForTests = async (page) => {     
+const preparePageForTests = async (page) => {
   // Pass the User-Agent Test
   const userAgent =
     "Mozilla/5.0 (X11; Linux x86_64)" +
@@ -19,44 +19,39 @@ const preparePageForTests = async (page) => {
 };
 
 const getPostData = async () => {
-  // var counter = 1;
-  // Exract all href urls
   const getLinks = async (...urls) => {
-    const hrefList = [];
+    const postList = [];
 
     for (let url of urls) {
       const page = await browser.newPage();
       await preparePageForTests(page);
-  
+
       try {
-        await page.goto(url)
+        await page.goto(url);
       } catch (err) {
-        console.log('Something went wrong error: ', err)
+        console.log("Something went wrong error: ", err);
       }
-  
-      // Scrape the data we want
-      const extractHrefList = await page.evaluate(() => {
+
+      const extractPostUrls = await page.evaluate(() => {
         const links = [];
-        let list = document.querySelectorAll('.result-image')
-        list.forEach(element => links.push(element.href));
-       
+        let list = document.querySelectorAll(".result-image");
+        list.forEach((element) => links.push(element.href));
+
         return links;
       });
 
-      hrefList.push(...extractHrefList);
+      postList.push(...extractPostUrls);
     }
-    
-    return hrefList;
+
+    return postList;
   };
 
-  // const getSearchData = async (links) => {
-    //   const data = [];
+  const getSearchData = async (links) => {
+    const data = [];
 
-    //   links.forEach((item, i) => {
-        
-    //   })
-    // }
-    
+    links.forEach((item, i) => {});
+  };
+
   const browser = await puppeteer.launch({
     args: ["--no-sandbox"],
     headless: true,
@@ -65,11 +60,20 @@ const getPostData = async () => {
   const sanDiegoUrl = `https://sandiego.craigslist.org/d/for-sale/search/sss?query=kitten&sort=rel`;
   const sanFranciscoUrl = `https://sfbay.craigslist.org/d/for-sale/search/sss?query=kitten&sort=rel`;
   const losAngelesUrl = `https://losangeles.craigslist.org/d/for-sale/search/sss?query=kitten&sort=rel`;
-  const links = await getLinks(sanLuisObispoUrl, sanDiegoUrl, sanFranciscoUrl, losAngelesUrl);
-  console.log(links)
+
+  // 1. Extract all the post urls from our search of all 4 cities
+  const links = await getLinks(
+    sanLuisObispoUrl,
+    sanDiegoUrl,
+    sanFranciscoUrl,
+    losAngelesUrl
+  );
+  
+  // 2. Extract all the data 
+  console.log(links);
   await browser.close();
   return links;
-}
+};
 
 // Initiate extraction
 getPostData();
