@@ -18,7 +18,7 @@ const preparePageForTests = async (page) => {
   await page.setUserAgent(userAgent);
 };
 
-const getPostData = async () => {
+const getListings = async () => {
   const getLinks = async (...urls) => {
     const postList = [];
 
@@ -46,20 +46,50 @@ const getPostData = async () => {
     return postList;
   };
 
-  const getSearchData = async (links) => {
-    const data = [];
+  const getPostData = async (links) => {
+    const posts = [];
 
-    links.forEach((item, i) => {});
+    for (link of links) {
+      console.log('Looping')
+      const page = await browser.newPage();
+      await preparePageForTests(page);
+
+      try {
+        await page.goto(link);
+      } catch (err) {
+        console.log("Something went wrong with link: ", err);
+      }
+
+      const extractPostData = await page.evaluate(() => {
+        const postData = {};
+
+        let title = document.getElementById('titletextonly');
+        let price = document.getElementsByClassName('price');
+        let body = document.getElementById('postingbody');
+        let city = document.getElementsByTagName('small');
+
+        return {
+          ...(title && {title: title.textContent}),
+          ...(price.length && {price: price[0].textContent}),
+          ...(body && {body: body.textContent}),
+          ...(city.length && {city: city[0].textContent}),
+        }
+      })
+      posts.push(extractPostData);
+    }
+
+    return posts;
+
   };
 
   const browser = await puppeteer.launch({
     args: ["--no-sandbox"],
     headless: true,
   });
-  const sanLuisObispoUrl = `https://slo.craigslist.org/d/community/search/ccc?query=kitten&sort=rel/`;
-  const sanDiegoUrl = `https://sandiego.craigslist.org/d/for-sale/search/sss?query=kitten&sort=rel`;
-  const sanFranciscoUrl = `https://sfbay.craigslist.org/d/for-sale/search/sss?query=kitten&sort=rel`;
-  const losAngelesUrl = `https://losangeles.craigslist.org/d/for-sale/search/sss?query=kitten&sort=rel`;
+  const sanLuisObispoUrl = `https://slo.craigslist.org/d/for-sale/search/sss?query=Labradoodle&sort=rel`;
+  const sanDiegoUrl = `https://sandiego.craigslist.org/d/for-sale/search/sss?query=Labradoodle&sort=rel`;
+  const sanFranciscoUrl = `https://sfbay.craigslist.org/d/for-sale/search/sss?query=Labradoodle&sort=rel`;
+  const losAngelesUrl = `https://losangeles.craigslist.org/d/for-sale/search/sss?query=Labradoodle&sort=rel`;
 
   // 1. Extract all the post urls from our search of all 4 cities
   const links = await getLinks(
@@ -68,17 +98,18 @@ const getPostData = async () => {
     sanFranciscoUrl,
     losAngelesUrl
   );
-  
+  console.log(links)
   // 2. Extract all the data 
-  console.log(links);
+  const data = await getPostData(links);
+  console.log(data);
   await browser.close();
   return links;
 };
 
-// Initiate extraction
-getPostData();
 
-// getSearchData(hrefUrls)
+// Initiate extraction
+getListings();
+
 app.listen(PORT, () => {
   console.log(`Server listening on port: ${PORT}`);
 });
